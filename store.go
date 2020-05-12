@@ -110,6 +110,8 @@ func setPragma(conn *sqlite.Conn, name string, i int64) error {
 }
 
 func open(url string, create bool) (store *ForensicStore, teardown func() error, err error) { // nolint:gocyclo,funlen,gocognit,lll
+	sqliteFlags := sqlite.SQLITE_OPEN_READWRITE | sqlite.SQLITE_OPEN_NOMUTEX
+
 	if url != ":memory:" {
 		url = strings.TrimRight(url, "/")
 
@@ -145,7 +147,11 @@ func open(url string, create bool) (store *ForensicStore, teardown func() error,
 
 	store = &ForensicStore{}
 
-	store.connection, err = sqlite.OpenConn(url, 0)
+	if create {
+		sqliteFlags |= sqlite.SQLITE_OPEN_CREATE
+	}
+
+	store.connection, err = sqlite.OpenConn(url, sqliteFlags)
 	if err != nil {
 		return nil, nil, err
 	}

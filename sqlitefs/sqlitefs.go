@@ -29,7 +29,8 @@ func New(url string) (*FS, error) {
 	var err error
 	fs := &FS{closeCursor: true}
 
-	fs.cursor, err = sqlite.OpenConn(url, 0)
+	flags := sqlite.SQLITE_OPEN_READWRITE | sqlite.SQLITE_OPEN_NOMUTEX | sqlite.SQLITE_OPEN_READWRITE
+	fs.cursor, err = sqlite.OpenConn(url, flags)
 	if err != nil {
 		return nil, err
 	}
