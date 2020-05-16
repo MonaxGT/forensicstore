@@ -149,7 +149,14 @@ func open(url string, create bool) (store *ForensicStore, teardown func() error,
 		return nil, nil, err
 	}
 
-	fs, err := sqlitefs.NewCursor(store.connection)
+	var fs afero.Fs
+	zipName := strings.TrimSuffix(url, ".forensicstore") + ".zip"
+	_, err = os.Stat(zipName)
+	if err == nil {
+		fs, err = newZIPFSWrapper(zipName)
+	} else {
+		fs, err = sqlitefs.NewCursor(store.connection)
+	}
 	if err != nil {
 		return nil, nil, err
 	}
@@ -377,6 +384,12 @@ func (store *ForensicStore) LoadFile(filePath string) (file io.ReadCloser, err e
 func (store *ForensicStore) Close() error {
 	if store.types.changed {
 		_ = store.createViews()
+	}
+
+	if closer, ok := store.Fs.(io.Closer); ok {
+		if err := closer.Close(); err != nil {
+			log.Println(err)
+		}
 	}
 
 	return store.connection.Close()
